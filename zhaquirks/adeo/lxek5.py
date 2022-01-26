@@ -1,6 +1,7 @@
 """Device handler for ADEO LXEK-5 (HR-C99C-Z-C045) Remote."""
 from zigpy.profiles import zha
 from zigpy.quirks import CustomDevice
+from zigpy.zcl import foundation
 from zigpy.zcl.clusters.general import (
     Basic,
     Groups,
@@ -14,8 +15,13 @@ from zigpy.zcl.clusters.homeautomation import Diagnostic
 from zigpy.zcl.clusters.lightlink import LightLink
 from zigpy.zcl.clusters.lighting import Color
 
+from zhaquirks import EventableCluster, Bus
 from zhaquirks.const import (
     ARGS,
+    BUTTON_1,
+    BUTTON_2,
+    BUTTON_3,
+    BUTTON_4,
     CLUSTER_ID,
     COMMAND,
     COMMAND_OFF,
@@ -36,7 +42,10 @@ from zhaquirks.const import (
     SHORT_PRESS,
     TURN_OFF,
     TURN_ON,
+    ZHA_SEND_EVENT,
 )
+import zigpy.types as t
+from typing import Any, List, Optional, Union
 
 COLOR_UP = "color_up"
 COLOR_DOWN = "color_down"
@@ -45,7 +54,44 @@ SATURATION_DOWN = "saturation_down"
 HUE_LEFT = "hue_left"
 HUE_RIGHT = "hue_right"
 
-MANUFACTURER_SPECIFIC_CLUSTER_ID_SCENES = 0xFE00  # decimal = 65024
+MANUFACTURER_SPECIFIC_CLUSTER_ID_PRESET = 0xFE00  # decimal = 65024
+
+
+class AdeoPresetCluster(EventableCluster):
+    """Custom cluster for preset buttons 1-4"""
+
+    cluster_id = MANUFACTURER_SPECIFIC_CLUSTER_ID_PRESET
+    name = "AdeoPresetCluster"
+    ep_attribute = "adeo_preset_cluster"
+    manufacturer_client_commands = {0x000: ("preset", (t.uint8_t, t.uint8_t), False)}
+
+    def handle_cluster_request(
+        self,
+        hdr: foundation.ZCLHeader,
+        args: List[Any],
+        *,
+        dst_addressing: Optional[
+            Union[t.Addressing.Group, t.Addressing.IEEE, t.Addressing.NWK]
+        ] = None,
+    ):
+        """Send cluster client requests as events."""
+        if (
+            self.manufacturer_client_commands is not None
+            and self.manufacturer_client_commands.get(hdr.command_id) is not None
+        ):
+            self.listener_event(
+                ZHA_SEND_EVENT,
+                self.manufacturer_client_commands.get(hdr.command_id)[0],
+                args,
+            )
+            self.debug(
+                "AdeoPresetCluster : fire event {action=%s, args=%s}",
+                self.manufacturer_client_commands.get(hdr.command_id)[0],
+                str(args),
+            )
+        else:
+            self.debug("AdeoPresetCluster : NO event fired")
+            super().handle_cluster_request(hdr, args, dst_addressing=dst_addressing)
 
 
 class AdeoLxek5(CustomDevice):
@@ -103,7 +149,7 @@ class AdeoLxek5(CustomDevice):
                     Ota.cluster_id,  # 25
                     Color.cluster_id,  # 768
                     LightLink.cluster_id,  # 4096
-                    MANUFACTURER_SPECIFIC_CLUSTER_ID_SCENES,
+                    AdeoPresetCluster,  # 65024
                 ],
             }
         },
@@ -169,5 +215,29 @@ class AdeoLxek5(CustomDevice):
             CLUSTER_ID: 768,  # Color.cluster_id
             ENDPOINT_ID: 1,
             ARGS: [1, 22, 5],
+        },
+        (SHORT_PRESS, BUTTON_1): {
+            COMMAND: "preset",
+            CLUSTER_ID: 65024,  # AdeoPresetCluster.cluster_id
+            ENDPOINT_ID: 1,
+            ARGS: [10, 1],
+        },
+        (SHORT_PRESS, BUTTON_2): {
+            COMMAND: "preset",
+            CLUSTER_ID: 65024,  # AdeoPresetCluster.cluster_id
+            ENDPOINT_ID: 1,
+            ARGS: [11, 1],
+        },
+        (SHORT_PRESS, BUTTON_3): {
+            COMMAND: "preset",
+            CLUSTER_ID: 65024,  # AdeoPresetCluster.cluster_id
+            ENDPOINT_ID: 1,
+            ARGS: [12, 1],
+        },
+        (SHORT_PRESS, BUTTON_4): {
+            COMMAND: "preset",
+            CLUSTER_ID: 65024,  # AdeoPresetCluster.cluster_id
+            ENDPOINT_ID: 1,
+            ARGS: [13, 1],
         },
     }

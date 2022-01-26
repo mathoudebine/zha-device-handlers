@@ -118,11 +118,14 @@ class EventableCluster(CustomCluster):
             self.server_commands is not None
             and self.server_commands.get(hdr.command_id) is not None
         ):
+            self.debug("EventableCluster : fire event")
             self.listener_event(
                 ZHA_SEND_EVENT,
                 self.server_commands.get(hdr.command_id, (hdr.command_id))[0],
                 args,
             )
+        else:
+            self.warning("EventableCluster : NO fire event")
 
     def _update_attribute(self, attrid, value):
         super()._update_attribute(attrid, value)

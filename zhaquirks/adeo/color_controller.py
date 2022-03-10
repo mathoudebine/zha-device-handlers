@@ -1,4 +1,4 @@
-"""Device handler for ADEO Lexman LXEK-5 (HR-C99C-Z-C045) Remote."""
+"""Device handler for ADEO Lexman LXEK-5 (HR-C99C-Z-C045) & ZBEK-26 (HR-C99C-Z-C045-B) color controllers"""
 from typing import Any, List, Optional, Union
 
 from zigpy.profiles import zha
@@ -97,8 +97,8 @@ class AdeoScenesCluster(Scenes, EventableCluster):
         self.endpoint.device.scenes_bus.add_listener(self)
 
 
-class AdeoLxek5(CustomDevice):
-    """Custom device representing ADEO LXEK-5 Remote."""
+class AdeoColorController(CustomDevice):
+    """Custom device representing ADEO color controller"""
 
     def __init__(self, *args, **kwargs):
         """Init."""
@@ -110,7 +110,7 @@ class AdeoLxek5(CustomDevice):
         #  device_version=1
         #  input_clusters=[0, 1, 3, 2821, 4096, 64769]
         #  output_clusters=[3, 4, 6, 8, 25, 768, 4096]>
-        MODELS_INFO: [("ADEO", "LXEK-5")],
+        MODELS_INFO: [("ADEO", "LXEK-5"), ("ADEO", "ZBEK-26")],
         ENDPOINTS: {
             1: {
                 PROFILE_ID: zha.PROFILE_ID,  # 260
